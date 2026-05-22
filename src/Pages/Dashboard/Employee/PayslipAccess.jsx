@@ -20,6 +20,25 @@ const MONTHS = [
 
 const YEARS = [2024, 2025, 2026, 2027, 2028];
 
+const getStoredUserData = () => {
+  try {
+    return JSON.parse(localStorage.getItem('hrms_tenant_user_data')) || {};
+  } catch {
+    return {};
+  }
+};
+
+const normalizeSalaryList = (response) => {
+  if (Array.isArray(response)) return response;
+  if (Array.isArray(response?.data)) return response.data;
+  if (Array.isArray(response?.data?.data)) return response.data.data;
+  return [];
+};
+
+const formatCurrency = (value) => (
+  `₹${Number(value || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+);
+
 export default function PayslipAccess() {
   const [salaries, setSalaries] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -30,9 +49,9 @@ export default function PayslipAccess() {
   const [selectedPayslip, setSelectedPayslip] = useState(null);
 
   // User & Tenant details
-  const userData = JSON.parse(localStorage.getItem('hrms_tenant_user_data'));
+  const userData = getStoredUserData();
   const tenantId = userData?.data?.user?.tenant_id || userData?.data?.data?.user?.tenant_id || userData?.data?.tenant_id || userData?.tenant_id || userData?.data?.user?.tenantId || userData?.data?.tenantId || userData?.tenantId || '';
-  const employeeId = userData?.data?.user?.id || userData?.data?.data?.user?.id || '';
+  const employeeId = userData?.data?.user?.employee_id || userData?.data?.data?.user?.employee_id || userData?.data?.user?.id || userData?.data?.data?.user?.id || userData?.id || '';
 
   const fetchPayslips = async () => {
     setLoading(true);
@@ -41,13 +60,7 @@ export default function PayslipAccess() {
       const url = `${API_ENDPOINTS.SALARY_LIST}?tenant_id=${tenantId}&employee_id=${employeeId}&year=${filterYear}`;
       const response = await fetchWithAuth(url);
       
-      if (Array.isArray(response)) {
-        setSalaries(response);
-      } else if (response.success && Array.isArray(response.data)) {
-        setSalaries(response.data);
-      } else {
-        setSalaries([]);
-      }
+      setSalaries(normalizeSalaryList(response));
     } catch (err) {
       setError('Error loading payslips: ' + err.message);
     } finally {
@@ -136,21 +149,21 @@ export default function PayslipAccess() {
             <tbody>
               <tr>
                 <td>Basic Salary</td>
-                <td>₹${payslip.base_salary?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                <td>${formatCurrency(payslip.base_salary)}</td>
                 <td>LOP Days (${payslip.lop_days} days of LOP)</td>
-                <td>₹${payslip.deductions?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                <td>${formatCurrency(payslip.deductions)}</td>
               </tr>
               <tr>
                 <td><strong>Gross Earnings</strong></td>
-                <td>₹${payslip.base_salary?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                <td>${formatCurrency(payslip.base_salary)}</td>
                 <td><strong>Total Deductions</strong></td>
-                <td>₹${payslip.deductions?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                <td>${formatCurrency(payslip.deductions)}</td>
               </tr>
             </tbody>
           </table>
           <div class="net-pay-box">
             <span class="net-pay-title">Net Take-Home Salary:</span>
-            <span class="net-pay-val">₹${payslip.net_salary?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+            <span class="net-pay-val">${formatCurrency(payslip.net_salary)}</span>
           </div>
           <script>
             window.onload = function() { window.print(); }
@@ -225,11 +238,11 @@ export default function PayslipAccess() {
                       <i className="fa-regular fa-calendar" style={{ marginRight: '8px', color: 'var(--text-tertiary)' }}></i> 
                       {getMonthLabel(payslip.month)} {payslip.year}
                     </td>
-                    <td>₹{payslip.base_salary?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                    <td>{formatCurrency(payslip.base_salary)}</td>
                     <td style={{ color: payslip.lop_days > 0 ? 'var(--danger)' : 'inherit' }}>
-                      ₹{payslip.deductions?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      {formatCurrency(payslip.deductions)}
                     </td>
-                    <td className="cell-primary">₹{payslip.net_salary?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                    <td className="cell-primary">{formatCurrency(payslip.net_salary)}</td>
                     <td>
                       <span className={`badge ${payslip.status === 'Paid' ? 'success' : 'warning'}`}>
                         {payslip.status}
@@ -318,15 +331,15 @@ export default function PayslipAccess() {
                 <tbody>
                   <tr>
                     <td>Basic Salary</td>
-                    <td>₹{selectedPayslip.base_salary?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                    <td>{formatCurrency(selectedPayslip.base_salary)}</td>
                     <td>Loss of Pay (LOP)</td>
-                    <td>₹{selectedPayslip.deductions?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                    <td>{formatCurrency(selectedPayslip.deductions)}</td>
                   </tr>
                   <tr style={{ fontWeight: '600', borderTop: '1px solid var(--border-color)' }}>
                     <td>Total Earnings</td>
-                    <td>₹{selectedPayslip.base_salary?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                    <td>{formatCurrency(selectedPayslip.base_salary)}</td>
                     <td>Total Deductions</td>
-                    <td>₹{selectedPayslip.deductions?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                    <td>{formatCurrency(selectedPayslip.deductions)}</td>
                   </tr>
                 </tbody>
               </table>
@@ -346,7 +359,7 @@ export default function PayslipAccess() {
                     Net Take-Home Salary
                   </span>
                   <div style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)', marginTop: '2px' }}>
-                    ₹{selectedPayslip.net_salary?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                    {formatCurrency(selectedPayslip.net_salary)}
                   </div>
                 </div>
                 <div>

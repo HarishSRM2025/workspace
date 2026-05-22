@@ -32,6 +32,7 @@ export const API_ENDPOINTS = {
   SALARY_CALCULATE: `${API_BASE_URL}/tenant/salary/calculate`,
   SALARY_LIST: `${API_BASE_URL}/tenant/salary/list`,
   SALARY_PAY: (id) => `${API_BASE_URL}/tenant/salary/pay/${id}`,
+  SALARY_CANCEL: (id) => `${API_BASE_URL}/tenant/salary/cancel/${id}`,
   SALARY_DELETE: (id) => `${API_BASE_URL}/tenant/salary/delete/${id}`,
 
   // Activity Log endpoints

@@ -20,6 +20,33 @@ const MONTHS = [
 
 const YEARS = [2024, 2025, 2026, 2027, 2028];
 
+const getStoredUserData = () => {
+  try {
+    return JSON.parse(localStorage.getItem('hrms_tenant_user_data')) || {};
+  } catch {
+    return {};
+  }
+};
+
+const normalizeSalaryList = (response) => {
+  if (Array.isArray(response)) return response;
+  if (Array.isArray(response?.data)) return response.data;
+  if (Array.isArray(response?.data?.data)) return response.data.data;
+  return [];
+};
+
+const getResponseMessage = (response, fallback) => (
+  response?.message || response?.Message || response?.data?.Message || fallback
+);
+
+const getResponseError = (response, fallback) => (
+  response?.error || response?.message || response?.data?.error || response?.data?.message || fallback
+);
+
+const formatCurrency = (value) => (
+  `₹${Number(value || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+);
+
 export default function PayrollManagement() {
   const [salaries, setSalaries] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -38,7 +65,7 @@ export default function PayrollManagement() {
   const [isCalculating, setIsCalculating] = useState(false);
 
   // User & Tenant details
-  const userData = JSON.parse(localStorage.getItem('hrms_tenant_user_data'));
+  const userData = getStoredUserData();
   const tenantId = userData?.data?.user?.tenant_id || userData?.data?.data?.user?.tenant_id || userData?.data?.tenant_id || userData?.tenant_id || userData?.data?.user?.tenantId || userData?.data?.tenantId || userData?.tenantId || '';
 
   const fetchSalaries = async () => {
@@ -49,14 +76,7 @@ export default function PayrollManagement() {
       const url = `${API_ENDPOINTS.SALARY_LIST}?tenant_id=${tenantId}&month=${filterMonth}&year=${filterYear}`;
       const response = await fetchWithAuth(url);
       
-      // If server returns an array directly, set it. Otherwise check wrapping
-      if (Array.isArray(response)) {
-        setSalaries(response);
-      } else if (response.success && Array.isArray(response.data)) {
-        setSalaries(response.data);
-      } else {
-        setSalaries([]);
-      }
+      setSalaries(normalizeSalaryList(response));
     } catch (err) {
       setError('Error loading salary calculations: ' + err.message);
     } finally {
@@ -88,14 +108,14 @@ export default function PayrollManagement() {
       });
 
       if (response.success || response.Message) {
-        setSuccessMsg(response.Message || 'Payroll calculated successfully!');
+        setSuccessMsg(getResponseMessage(response, 'Payroll calculated successfully!'));
         setIsRunModalOpen(false);
         // Reset filters to match the calculations we just ran
         setFilterMonth(runMonth);
         setFilterYear(runYear);
         fetchSalaries();
       } else {
-        throw new Error(response.error || response.message || 'Calculation failed');
+        throw new Error(getResponseError(response, 'Calculation failed'));
       }
     } catch (err) {
       setError('Error running payroll: ' + err.message);
@@ -113,13 +133,33 @@ export default function PayrollManagement() {
       });
 
       if (response.success || response.Message) {
-        setSuccessMsg(response.Message || 'Salary marked as Paid!');
+        setSuccessMsg(getResponseMessage(response, 'Salary marked as Paid!'));
         fetchSalaries();
       } else {
-        throw new Error(response.error || response.message || 'Payment update failed');
+        throw new Error(getResponseError(response, 'Payment update failed'));
       }
     } catch (err) {
       setError('Error updating salary record: ' + err.message);
+    }
+  };
+
+  const handleCancelSalary = async (id) => {
+    if (!window.confirm('Are you sure you want to cancel this salary calculation record?')) return;
+    setError('');
+    setSuccessMsg('');
+    try {
+      const response = await fetchWithAuth(API_ENDPOINTS.SALARY_CANCEL(id), {
+        method: 'PUT'
+      });
+
+      if (response.success || response.Message) {
+        setSuccessMsg(getResponseMessage(response, 'Salary cancelled!'));
+        fetchSalaries();
+      } else {
+        throw new Error(getResponseError(response, 'Cancellation failed'));
+      }
+    } catch (err) {
+      setError('Error cancelling salary record: ' + err.message);
     }
   };
 
@@ -133,10 +173,10 @@ export default function PayrollManagement() {
       });
 
       if (response.success || response.Message) {
-        setSuccessMsg(response.Message || 'Salary record deleted!');
+        setSuccessMsg(getResponseMessage(response, 'Salary record deleted!'));
         fetchSalaries();
       } else {
-        throw new Error(response.error || response.message || 'Deletion failed');
+        throw new Error(getResponseError(response, 'Deletion failed'));
       }
     } catch (err) {
       setError('Error deleting salary record: ' + err.message);
@@ -186,7 +226,7 @@ export default function PayrollManagement() {
             <i className="fa-solid fa-money-bill-wave"></i>
           </div>
           <div className="stat-info">
-            <span className="stat-value">₹{totalPayroll.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            <span className="stat-value">{formatCurrency(totalPayroll)}</span>
             <span className="stat-title">Total Net Payroll ({getMonthLabel(filterMonth)})</span>
           </div>
         </div>
@@ -204,7 +244,7 @@ export default function PayrollManagement() {
             <i className="fa-solid fa-circle-minus"></i>
           </div>
           <div className="stat-info">
-            <span className="stat-value">₹{totalDeductions.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            <span className="stat-value">{formatCurrency(totalDeductions)}</span>
             <span className="stat-title">Total Deductions</span>
           </div>
         </div>
@@ -279,13 +319,13 @@ export default function PayrollManagement() {
                       </div>
                     </td>
                     <td>{getMonthLabel(record.month)} {record.year}</td>
-                    <td>₹{record.base_salary?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                    <td>{formatCurrency(record.base_salary)}</td>
                     <td style={{ textAlign: 'center' }}>{record.worked_days} / {record.total_days}</td>
                     <td style={{ textAlign: 'center', color: record.lop_days > 0 ? 'var(--danger)' : 'inherit' }}>
                       {record.lop_days}
                     </td>
-                    <td>₹{record.deductions?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-                    <td className="cell-primary">₹{record.net_salary?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                    <td>{formatCurrency(record.deductions)}</td>
+                    <td className="cell-primary">{formatCurrency(record.net_salary)}</td>
                     <td>
                       <span className={`badge ${record.status === 'Paid' ? 'success' : record.status === 'Cancelled' ? 'danger' : 'warning'}`}>
                         {record.status}
@@ -293,7 +333,7 @@ export default function PayrollManagement() {
                     </td>
                     <td>
                       <div className="table-actions">
-                        {record.status !== 'Paid' && (
+                        {record.status === 'Calculated' && (
                           <button 
                             className="table-action-btn"
                             onClick={() => handlePaySalary(record.id)}
@@ -301,6 +341,16 @@ export default function PayrollManagement() {
                             title="Mark as Paid"
                           >
                             <i className="fa-solid fa-check"></i> Pay
+                          </button>
+                        )}
+                        {record.status === 'Calculated' && (
+                          <button
+                            className="table-action-btn"
+                            onClick={() => handleCancelSalary(record.id)}
+                            style={{ color: 'var(--warning)' }}
+                            title="Cancel Calculation"
+                          >
+                            <i className="fa-solid fa-ban"></i>
                           </button>
                         )}
                         <button 
