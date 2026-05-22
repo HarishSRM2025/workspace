@@ -33,8 +33,10 @@ export const fetchWithAuth = async (url, options = {}) => {
   // Gateway returns 401 or 403 on expired/missing tokens
   if (response.status === 401 || response.status === 403) {
     localStorage.removeItem("hrms_tenant_user_data");
-    if (window.location.pathname !== "/auth") {
-        window.location.href = "/auth";
+    const [slug] = window.location.pathname.split("/").filter(Boolean);
+    const authPath = slug ? `/${slug}/auth` : "/appzoo/auth";
+    if (window.location.pathname !== authPath) {
+      window.location.href = authPath;
     }
     return Promise.reject(new Error("Session expired. Please log in again."));
   }
