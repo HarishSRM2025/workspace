@@ -21,10 +21,11 @@ export default function LeaveApproval() {
       // Fetch only pending requests
       const url = `${API_ENDPOINTS.LEAVE_REQUEST}?status=Pending`;
       const response = await fetchWithAuth(url);
-      if (Array.isArray(response)) {
-        setPendingRequests(response);
-      } else if (response?.results) {
-        setPendingRequests(response.results);
+      const leaveData = response?.data || response;
+      if (Array.isArray(leaveData)) {
+        setPendingRequests(leaveData);
+      } else if (leaveData?.results) {
+        setPendingRequests(leaveData.results);
       } else {
         setPendingRequests([]);
       }
@@ -43,14 +44,13 @@ export default function LeaveApproval() {
     }
 
     try {
-      const response = await fetch(`${API_ENDPOINTS.LEAVE_REQUEST}${id}/`, {
+      const response = await fetchWithAuth(`${API_ENDPOINTS.LEAVE_REQUEST}/${id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus })
       });
 
-      if (!response.ok) {
-        throw new Error(`Failed to ${newStatus.toLowerCase()} request.`);
+      if (response?.success === false) {
+        throw new Error(response.message || `Failed to ${newStatus.toLowerCase()} request.`);
       }
 
       // Refresh the list

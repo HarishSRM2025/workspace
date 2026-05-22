@@ -7,7 +7,7 @@ import { fetchWithAuth } from '../../../utils/fetchWithAuth';
 export default function LeaveRequest() {
   const [leaveHistory, setLeaveHistory] = useState([]);
   const [formData, setFormData] = useState({
-    leave_type: 'Annual Leave',
+    leave_type: 'Casual Leave',
     start_date: '',
     end_date: '',
     reason: ''
@@ -50,10 +50,11 @@ export default function LeaveRequest() {
       // We'll use standard fetch or fetchWithAuth.
       const url = `${API_ENDPOINTS.LEAVE_REQUEST}?employee_id=${userInfo.id}`;
       const response = await fetchWithAuth(url);
-      if (Array.isArray(response)) {
-        setLeaveHistory(response);
-      } else if (response?.results) { // In case of pagination
-        setLeaveHistory(response.results);
+      const leaveData = response?.data || response;
+      if (Array.isArray(leaveData)) {
+        setLeaveHistory(leaveData);
+      } else if (leaveData?.results) { // In case of pagination
+        setLeaveHistory(leaveData.results);
       } else {
         setLeaveHistory([]);
       }
@@ -98,19 +99,18 @@ export default function LeaveRequest() {
     };
 
     try {
-      const response = await fetch(API_ENDPOINTS.LEAVE_REQUEST, {
+      const response = await fetchWithAuth(API_ENDPOINTS.LEAVE_REQUEST, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
       
-      if (!response.ok) {
-        throw new Error("Failed to submit request.");
+      if (response?.success === false) {
+        throw new Error(response.message || "Failed to submit request.");
       }
       
       // Reset form
       setFormData({
-        leave_type: 'Annual Leave',
+        leave_type: 'Casual Leave',
         start_date: '',
         end_date: '',
         reason: ''
@@ -160,9 +160,9 @@ export default function LeaveRequest() {
               <div className="form-group">
                 <label>Leave Type</label>
                 <select name="leave_type" value={formData.leave_type} onChange={handleInputChange}>
-                  <option value="Annual Leave">Annual Leave</option>
-                  <option value="Sick Leave">Sick Leave</option>
-                  <option value="Personal Leave">Personal Leave</option>
+                  <option value="Casual Leave">Casual Leave</option>
+                  <option value="LOP">Loss of Pay (LOP)</option>
+                  <option value="Weekoff">Weekoff</option>
                 </select>
               </div>
               <div className="form-group">

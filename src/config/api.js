@@ -3,7 +3,7 @@
  * Base URL and endpoint definitions
  */
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ;
 
 export const API_ENDPOINTS = {
   // Tenant endpoints
@@ -26,7 +26,7 @@ export const API_ENDPOINTS = {
   ATTENDANCE_CHECKOUT: `${API_BASE_URL}/tenant/attendance/checkout`,
 
   // Leave endpoints
-  LEAVE_REQUEST: "http://localhost:8000/api/leave/requests/",
+  LEAVE_REQUEST: `${API_BASE_URL}/tenant/leave/requests`,
 
   // Salary endpoints
   SALARY_CALCULATE: `${API_BASE_URL}/tenant/salary/calculate`,
@@ -36,5 +36,5 @@ export const API_ENDPOINTS = {
   SALARY_DELETE: (id) => `${API_BASE_URL}/tenant/salary/delete/${id}`,
 
   // Activity Log endpoints
-  ACTIVITY_LOG: "http://localhost:8000/api/activities/logs/",
+  ACTIVITY_LOG: `${API_BASE_URL}/tenant/activities/logs/`,
 };
