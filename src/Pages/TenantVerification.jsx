@@ -60,6 +60,17 @@ export default function TenantVerification() {
       } catch (err) {
         console.error('Tenant verification error:', err);
         if (isMounted) {
+          // If this is a network/fetch/server connection error, show a Connection Failed page
+          const isNetworkError = err.message === 'Failed to fetch' || 
+                                 err.message.includes('network') || 
+                                 err.message.includes('fetch') ||
+                                 err.message.includes('connect');
+          if (isNetworkError) {
+            setError(`Could not connect to the API Gateway. Error: ${err.message}`);
+            setLoading(false);
+            return;
+          }
+
           // If tenant not found, check if user is logged in and redirect to their correct tenant
           const userDataStr = localStorage.getItem('hrms_tenant_user_data');
           if (userDataStr) {
@@ -87,14 +98,16 @@ export default function TenantVerification() {
                   } else {
                     // User's tenant no longer exists, log them out
                     localStorage.removeItem('hrms_tenant_user_data');
-                    navigate(`/${slug}/auth`, { replace: true });
+                    setError('Tenant not found');
+                    setLoading(false);
                     return;
                   }
                 } catch (tenantCheckError) {
                   console.error('Error checking user tenant:', tenantCheckError);
                   // If we can't verify the tenant, log the user out
                   localStorage.removeItem('hrms_tenant_user_data');
-                  navigate(`/${slug}/auth`, { replace: true });
+                  setError('Tenant not found');
+                  setLoading(false);
                   return;
                 }
               }
@@ -104,8 +117,9 @@ export default function TenantVerification() {
             }
           }
           
-          // If no user is logged in or user has no valid tenant, redirect to default tenant
-          navigate('/appzoo/auth', { replace: true });
+          // If no user is logged in or user has no valid tenant, show OrgNotFound page
+          setError('Tenant not found');
+          setLoading(false);
           return;
         }
       }
@@ -151,6 +165,68 @@ export default function TenantVerification() {
   }
 
   if (error) {
+    if (error.includes('Could not connect to the API Gateway')) {
+      return (
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '100vh',
+          background: '#F0F4FC',
+          padding: '24px',
+          fontFamily: "'DM Sans', sans-serif",
+        }}>
+          <div style={{
+            position: 'relative',
+            background: '#ffffff',
+            borderRadius: 24,
+            border: '1.5px solid #FCA5A5',
+            boxShadow: '0 4px 24px rgba(220,38,38,.08)',
+            padding: '48px 44px 40px',
+            maxWidth: 480,
+            width: '100%',
+            textAlign: 'center',
+          }}>
+            <div style={{
+              width: 76,
+              height: 76,
+              borderRadius: '50%',
+              background: 'rgba(239,68,68,.10)',
+              border: '1.5px solid rgba(239,68,68,.28)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 22px',
+            }}>
+              <i className="fa-solid fa-triangle-exclamation" style={{ color: '#EF4444', fontSize: '32px' }} />
+            </div>
+            <h1 style={{ fontSize: 24, margin: '0 0 10px', color: '#111827', fontWeight: 600 }}>Connection Failed</h1>
+            <p style={{ fontSize: 14, color: '#6B7280', lineHeight: 1.6, margin: '0 0 20px' }}>
+              The workspace application was unable to reach the API Gateway.
+            </p>
+            <div style={{
+              background: '#F9FAFB',
+              border: '1px solid #E5E7EB',
+              borderRadius: 8,
+              padding: '12px',
+              textAlign: 'left',
+              fontSize: 12,
+              fontFamily: 'monospace',
+              color: '#374151',
+              marginBottom: 20
+            }}>
+              <strong>Technical Detail:</strong><br />
+              - Target URL: {API_ENDPOINTS.TENANT_GET(slug)}<br />
+              - Error: {error}
+            </div>
+            <p style={{ fontSize: 13, color: '#4B5563', lineHeight: 1.5 }}>
+              <strong>For Local Development:</strong> Make sure both your <strong>gateway</strong> (port 4000) and <strong>auth_service</strong> (port 3000) backend servers are running.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
     return (
         <>
          <OrgNotFound />
