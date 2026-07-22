@@ -1,31 +1,20 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate, Outlet } from 'react-router-dom';
+import { useParams, useNavigate, Outlet, useLocation } from 'react-router-dom';
 import { API_ENDPOINTS } from '../config/api';
 import OrgNotFound from './OrgNotFound';
 
 export default function TenantVerification() {
   const { slug } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [verifiedTenant, setVerifiedTenant] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
     const verifyTenant = async () => {
       try {
-        // Check if user data exists in localStorage first
-        const userDataStr = localStorage.getItem('hrms_tenant_user_data');
-        let userData = null;
-        if (userDataStr) {
-          try {
-            userData = JSON.parse(userDataStr);
-          } catch (e) {
-            console.error('Error parsing user data:', e);
-            localStorage.removeItem('hrms_tenant_user_data');
-          }
-        }
-        // Get user slug from either new or old data structure
-        const userSlug = userData?.data?.user?.slug || userData?.data?.data?.data?.user?.slug;
         // Call the tenant verification API
         const response = await fetch(API_ENDPOINTS.TENANT_GET(slug), {
           method: 'GET',
@@ -43,28 +32,16 @@ export default function TenantVerification() {
         if (!isMounted) return;
 
         // Tenant exists
-        // Check if user data exists in localStorage
-        const currentPath = window.location.pathname;
-          
-        if (userSlug === slug) {
-          if (!currentPath.includes(`/${slug}/home`)) {
-            navigate(`/${slug}/home`, { replace: true });
-          }
-        } else {
-          if (!currentPath.endsWith("/auth")) {
-            navigate(`/${slug}/auth`, { replace: true });
-          }
-        }
-        
+        setVerifiedTenant(slug);
         setLoading(false);
       } catch (err) {
         console.error('Tenant verification error:', err);
         if (isMounted) {
           // If this is a network/fetch/server connection error, show a Connection Failed page
           const isNetworkError = err.message === 'Failed to fetch' || 
-                                 err.message.includes('network') || 
-                                 err.message.includes('fetch') ||
-                                 err.message.includes('connect');
+                                  err.message.includes('network') || 
+                                  err.message.includes('fetch') ||
+                                  err.message.includes('connect');
           if (isNetworkError) {
             setError(`Could not connect to the API Gateway. Error: ${err.message}`);
             setLoading(false);
@@ -125,6 +102,8 @@ export default function TenantVerification() {
       }
     };
 
+    setLoading(true);
+    setError(null);
     if (slug) {
       verifyTenant();
     }
@@ -133,6 +112,35 @@ export default function TenantVerification() {
       isMounted = false;
     };
   }, [slug, navigate]);
+
+  useEffect(() => {
+    if (loading || error || verifiedTenant !== slug) return;
+
+    // Check if user data exists in localStorage
+    const userDataStr = localStorage.getItem('hrms_tenant_user_data');
+    let userData = null;
+    if (userDataStr) {
+      try {
+        userData = JSON.parse(userDataStr);
+      } catch (e) {
+        console.error('Error parsing user data:', e);
+        localStorage.removeItem('hrms_tenant_user_data');
+      }
+    }
+    // Get user slug from either new or old data structure
+    const userSlug = userData?.data?.user?.slug || userData?.data?.data?.data?.user?.slug;
+    const currentPath = location.pathname;
+      
+    if (userSlug === slug) {
+      if (!currentPath.includes(`/${slug}/home`)) {
+        navigate(`/${slug}/home`, { replace: true });
+      }
+    } else {
+      if (!currentPath.endsWith("/auth")) {
+        navigate(`/${slug}/auth`, { replace: true });
+      }
+    }
+  }, [loading, error, verifiedTenant, slug, location.pathname, navigate]);
 
   if (loading && !error) {
     return (
