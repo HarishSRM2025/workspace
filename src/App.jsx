@@ -1,12 +1,9 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { useEffect } from 'react';
 import './App.css';
 import HRMSAuth from './Pages/Auth/HRMSAuth';
 import TenantVerification from './Pages/TenantVerification';
 import Home from './Pages/Home/Home';
 import OrgNotFound from './Pages/OrgNotFound';
-import DashboardPage from './Pages/Dashboard/DashboardPage';
-import { applyAppearance, getStoredAccent, getStoredTheme } from './utils/appearance';
 
 // Admin Features
 import EmployeeManagement from './Pages/Dashboard/Admin/EmployeeManagement';
@@ -31,10 +28,6 @@ import PayslipAccess from './Pages/Dashboard/Employee/PayslipAccess';
 import TaskAssignments from './Pages/Dashboard/Employee/TaskAssignments';
 
 function App() {
-  useEffect(() => {
-    applyAppearance(getStoredTheme(), getStoredAccent());
-  }, []);
-
   return (
     <Router>
       <Routes>
@@ -69,13 +62,6 @@ function App() {
             <Route path="employee/leaves" element={<LeaveRequest />} />
             <Route path="employee/payslips" element={<PayslipAccess />} />
             <Route path="employee/tasks" element={<TaskAssignments />} />
-
-            <Route path="subscriptions" element={<DashboardPage title="Subscriptions" icon="fa-layer-group" text="Review plan usage, renewals, and add-on seats." />} />
-            <Route path="analytics" element={<DashboardPage title="Analytics" icon="fa-chart-column" text="Inspect workforce metrics, trends, and activity." />} />
-            <Route path="billing" element={<DashboardPage title="Billing" icon="fa-credit-card" text="Manage invoices, payment methods, and billing history." />} />
-            <Route path="notifications" element={<DashboardPage title="Notifications" icon="fa-bell" text="Control alerts, reminders, and system messages." />} />
-            <Route path="settings" element={<DashboardPage title="Settings" icon="fa-gear" text="Change theme, update the primary color, and edit profile details." />} />
-            <Route path="profile" element={<DashboardPage title="Profile" icon="fa-user" text="Update your profile and change your password." />} />
           </Route>
         </Route>
         
