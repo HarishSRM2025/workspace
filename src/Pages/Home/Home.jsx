@@ -20,6 +20,16 @@ export default function Home() {
   const [isWorking, setIsWorking] = useState(false);
 
   useEffect(() => {
+    const ensureAuth = () => {
+      const userDataStr = localStorage.getItem('hrms_tenant_user_data');
+      if (!userDataStr) {
+        navigate(`/${slug}/auth`, { replace: true });
+        return false;
+      }
+
+      return true;
+    };
+
     const userDataStr = localStorage.getItem('hrms_tenant_user_data');
     if (!userDataStr) {
       navigate(`/${slug}/auth`, { replace: true });
@@ -37,6 +47,13 @@ export default function Home() {
       localStorage.removeItem('hrms_tenant_user_data');
       navigate(`/${slug}/auth`, { replace: true });
     }
+
+    const handlePageShow = () => {
+      ensureAuth();
+    };
+
+    window.addEventListener('pageshow', handlePageShow);
+    return () => window.removeEventListener('pageshow', handlePageShow);
   }, [slug, navigate]);
 
   const fetchTenantStats = async (data) => {
@@ -97,7 +114,7 @@ export default function Home() {
 
   const handleLogout = () => {
     localStorage.removeItem('hrms_tenant_user_data');
-    navigate(`/${slug}/auth`, { replace: true });
+    window.location.replace(`/${slug}/auth`);
   };
 
   if (loading) {

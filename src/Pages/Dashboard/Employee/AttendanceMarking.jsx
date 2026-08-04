@@ -42,13 +42,30 @@ function to12Hour(time24) {
 
 function computeExpectedCheckOut(checkInTimeStr, workingHours) {
   if (!checkInTimeStr || !workingHours) return null;
-  const parsed = parseTimeString(checkInTimeStr);
-  if (!parsed) return null;
-  const ms = parsed.getTime() + workingHours * 3600000;
-  const d = new Date(ms);
-  const hh = String(d.getUTCHours()).padStart(2, '0');
-  const mm = String(d.getUTCMinutes()).padStart(2, '0');
-  return `${hh}:${mm}`;
+  const [hours, minutes] = checkInTimeStr.toString().split(':').map(Number);
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) return null;
+  const totalMinutes = (hours * 60) + minutes + Math.round(workingHours * 60);
+  const outHours = Math.floor(totalMinutes / 60) % 24;
+  const outMinutes = totalMinutes % 60;
+  return `${String(outHours).padStart(2, '0')}:${String(outMinutes).padStart(2, '0')}`;
+}
+
+function getAttendanceStartDate(user) {
+  const raw = user?.created_at || user?.createdAt || user?.signup_at || user?.joined_at || user?.employee_created_at;
+  if (!raw) return null;
+  const date = new Date(raw);
+  if (Number.isNaN(date.getTime())) return null;
+  return new Date(date.getFullYear(), date.getMonth(), 1);
+}
+
+function isBeforeStart(dateStr, startDate) {
+  if (!startDate) return false;
+  const date = new Date(dateStr);
+  if (Number.isNaN(date.getTime())) return false;
+  date.setHours(0, 0, 0, 0);
+  const start = new Date(startDate);
+  start.setHours(0, 0, 0, 0);
+  return date < start;
 }
 
 export default function AttendanceMarking() {
@@ -76,6 +93,7 @@ export default function AttendanceMarking() {
   const today = new Date();
   const todayKey = today.toISOString().slice(0, 10);
   const formattedDate = today.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  const attendanceStartDate = getAttendanceStartDate(user);
 
   const fetchAttendance = async () => {
     setLoading(true);
@@ -86,7 +104,7 @@ export default function AttendanceMarking() {
       const response = await fetchWithAuth(API_ENDPOINTS.ATTENDANCE_LIST);
       const records = response?.success ? (response.data || []) : (Array.isArray(response) ? response : []);
       const myRecords = records.filter(r => r.employee_id?.toString() === user.id?.toString());
-      setAllAttendance(myRecords);
+      setAllAttendance(myRecords.filter(r => !isBeforeStart(r.attendance_date, attendanceStartDate)));
 
       // Active/Current Attendance Record for today
       const currentActive = myRecords.find(r => r.attendance_date === todayKey && r.check_in_time && !r.check_out_time) ||
@@ -227,6 +245,18 @@ export default function AttendanceMarking() {
       d.setDate(d.getDate() - i);
       const dateStr = d.toISOString().slice(0, 10);
 
+      if (isBeforeStart(dateStr, attendanceStartDate)) {
+        log.push({
+          date: dateStr,
+          dateObj: d,
+          attendance: null,
+          leave: null,
+          isToday: dateStr === todayKey,
+          isBeforeStart: true,
+        });
+        continue;
+      }
+
       const attRecord = allAttendance.find(r => r.attendance_date === dateStr);
 
       // Check if date falls within any leave request
@@ -243,7 +273,8 @@ export default function AttendanceMarking() {
         dateObj: d,
         attendance: attRecord || null,
         leave: leaveMatch || null,
-        isToday: dateStr === todayKey
+        isToday: dateStr === todayKey,
+        isBeforeStart: false
       });
     }
     return log;
@@ -252,7 +283,11 @@ export default function AttendanceMarking() {
   const logs7Days = generate7DayLog();
 
   const renderStatusBadge = (logItem) => {
-    const { attendance: att, leave: l, isToday } = logItem;
+    const { attendance: att, leave: l, isToday, isBeforeStart } = logItem;
+
+    if (isBeforeStart) {
+      return <span className="badge secondary">Before joining month</span>;
+    }
 
     if (att) {
       if (att.check_out_time) return <span className="badge success">Present (Completed)</span>;

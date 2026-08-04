@@ -2,7 +2,20 @@ import { NavLink } from 'react-router-dom';
 import './Dashboard.css';
 
 export default function Sidebar({ role, slug }) {
+  const userData = JSON.parse(localStorage.getItem('hrms_tenant_user_data') || '{}');
+  const user = userData?.data?.user || userData?.data?.data?.user || userData?.user || {};
+  const initials = (user?.user_name || 'U').slice(0, 2).toUpperCase();
+
   const getLinks = () => {
+    const shared = [
+      { name: 'Subscriptions', path: `/${slug}/home/subscriptions`, icon: 'fa-solid fa-layer-group' },
+      { name: 'Analytics', path: `/${slug}/home/analytics`, icon: 'fa-solid fa-chart-column' },
+      { name: 'Billing', path: `/${slug}/home/billing`, icon: 'fa-solid fa-credit-card' },
+      { name: 'Notifications', path: `/${slug}/home/notifications`, icon: 'fa-solid fa-bell' },
+      { name: 'Settings', path: `/${slug}/home/settings`, icon: 'fa-solid fa-gear' },
+      { name: 'Profile', path: `/${slug}/home/profile`, icon: 'fa-solid fa-user' },
+    ];
+
     switch(role) {
       case 'TENANT_ADMIN':
         return [
@@ -22,6 +35,7 @@ export default function Sidebar({ role, slug }) {
           ]},
           { section: 'SYSTEM', links: [
             { name: 'Role & Permissions', path: `/${slug}/home/admin/roles`, icon: 'fa-solid fa-shield-halved' },
+            ...shared,
           ]}
         ];
       case 'MANAGER':
@@ -33,12 +47,9 @@ export default function Sidebar({ role, slug }) {
             { name: 'Leave Approvals', path: `/${slug}/home/manager/leaves`, icon: 'fa-solid fa-calendar-check' },
             { name: 'Tasks', path: `/${slug}/home/manager/tasks`, icon: 'fa-solid fa-list-check' },
           ]},
-          { section: 'Personal Dashboard  ', links: [
-            { name: 'Attendance Record', path: `/${slug}/home/employee/attendance`, icon: 'fa-solid fa-fingerprint' },
-            { name: 'Payslips', path: `/${slug}/home/employee/payslips`, icon: 'fa-solid fa-file-invoice-dollar' },
-          ]},
           { section: 'REVIEWS', links: [
             { name: 'Performance', path: `/${slug}/home/manager/performance`, icon: 'fa-solid fa-star' },
+            ...shared,
           ]}
         ];
       case 'EMPLOYEE':
@@ -50,6 +61,7 @@ export default function Sidebar({ role, slug }) {
             { name: 'Leave Requests', path: `/${slug}/home/employee/leaves`, icon: 'fa-solid fa-calendar-plus' },
             { name: 'Payslips', path: `/${slug}/home/employee/payslips`, icon: 'fa-solid fa-file-invoice-dollar' },
             { name: 'My Tasks', path: `/${slug}/home/employee/tasks`, icon: 'fa-solid fa-list-ul' },
+            ...shared,
           ]}
         ];
     }
@@ -87,6 +99,18 @@ export default function Sidebar({ role, slug }) {
             ))}
           </div>
         ))}
+        <div className="sidebar-footer">
+          <div className="sidebar-user">
+            <div className="sidebar-avatar">{initials}</div>
+            <div>
+              <div className="sidebar-name">{user?.user_name || 'User'}</div>
+              <div className="sidebar-email">{user?.user_email || ''}</div>
+            </div>
+          </div>
+          <button className="sidebar-logout" onClick={() => { localStorage.removeItem('hrms_tenant_user_data'); window.location.replace(`/${slug}/auth`); }}>
+            <i className="fa-solid fa-arrow-right-from-bracket" /> Logout
+          </button>
+        </div>
       </nav>
     </aside>
   );
