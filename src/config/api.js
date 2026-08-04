@@ -37,4 +37,13 @@ export const API_ENDPOINTS = {
 
   // Activity Log endpoints
   ACTIVITY_LOG: `${API_BASE_URL}/tenant/activities/logs/`,
+
+  // Tenant Stats endpoint
+  TENANT_STATS: `${API_BASE_URL}/tenant/stats/`,
+
+  // Task / Scrum endpoints
+  TASK_LIST: `${API_BASE_URL}/tenant/tasks/`,
+  TASK_CREATE: `${API_BASE_URL}/tenant/tasks/`,
+  TASK_UPDATE: (id) => `${API_BASE_URL}/tenant/tasks/${id}`,
+  TASK_DELETE: (id) => `${API_BASE_URL}/tenant/tasks/${id}`,
 };

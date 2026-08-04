@@ -14,6 +14,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [recentActivities, setRecentActivities] = useState([]);
   const [loadingActivities, setLoadingActivities] = useState(true);
+  const [tenantStats, setTenantStats] = useState(null);
   
   // Attendance Guard State
   const [isWorking, setIsWorking] = useState(false);
@@ -30,12 +31,28 @@ export default function Home() {
       setLoading(false);
       fetchRecentActivities(data);
       fetchTodayAttendance(data);
+      fetchTenantStats(data);
     } catch (err) {
       console.error('Error parsing user data:', err);
       localStorage.removeItem('hrms_tenant_user_data');
       navigate(`/${slug}/auth`, { replace: true });
     }
   }, [slug, navigate]);
+
+  const fetchTenantStats = async (data) => {
+    try {
+      const user = data?.data?.user || data?.data?.data?.user || data?.data?.data?.data?.user || data?.user || data?.data;
+      const tenantId = user?.tenant_id;
+      if (tenantId) {
+        const response = await fetchWithAuth(`${API_ENDPOINTS.TENANT_STATS}?tenant_id=${tenantId}`);
+        if (response?.success && response.data) {
+          setTenantStats(response.data);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch tenant stats:', err);
+    }
+  };
 
   const fetchTodayAttendance = async (data) => {
     try {
@@ -122,9 +139,9 @@ export default function Home() {
                     <i className="fa-regular fa-building"></i>
                   </div>
                   <div className="stat-info">
-                    <span className="stat-value">12</span>
+                    <span className="stat-value">{tenantStats ? tenantStats.total_employees : '--'}</span>
                     <span className="stat-title">Total Employees</span>
-                    <span className="stat-trend up"><i className="fa-solid fa-arrow-up"></i> +2 this month</span>
+                    <span className="stat-trend up"><i className="fa-solid fa-user"></i> Live Count</span>
                   </div>
                 </div>
 
@@ -133,31 +150,31 @@ export default function Home() {
                     <i className="fa-regular fa-circle-check"></i>
                   </div>
                   <div className="stat-info">
-                    <span className="stat-value">8</span>
-                    <span className="stat-title">Active Tasks</span>
-                    <span className="stat-trend neutral"><i className="fa-solid fa-minus"></i> 0% change</span>
+                    <span className="stat-value">{tenantStats ? tenantStats.total_tasks : '--'}</span>
+                    <span className="stat-title">Total Tasks ({tenantStats ? tenantStats.completed_tasks : 0} Done)</span>
+                    <span className="stat-trend neutral"><i className="fa-solid fa-list-check"></i> Scrum Board</span>
                   </div>
                 </div>
 
                 <div className="stat-card">
                   <div className="stat-icon-wrapper purple">
-                    <i className="fa-solid fa-user-group"></i>
+                    <i className="fa-solid fa-calendar-minus"></i>
                   </div>
                   <div className="stat-info">
-                    <span className="stat-value">3</span>
+                    <span className="stat-value">{tenantStats ? tenantStats.pending_leaves : '--'}</span>
                     <span className="stat-title">Pending Leave Requests</span>
-                    <span className="stat-trend up"><i className="fa-solid fa-arrow-up"></i> +3 this week</span>
+                    <span className="stat-trend up"><i className="fa-solid fa-clock"></i> Needs Approval</span>
                   </div>
                 </div>
 
                 <div className="stat-card">
                   <div className="stat-icon-wrapper orange">
-                    <i className="fa-solid fa-hourglass-start"></i>
+                    <i className="fa-solid fa-user-check"></i>
                   </div>
                   <div className="stat-info">
-                    <span className="stat-value">2</span>
-                    <span className="stat-title">Overdue Reviews</span>
-                    <span className="stat-trend down"><i className="fa-solid fa-arrow-down"></i> Needs attention</span>
+                    <span className="stat-value">{tenantStats ? tenantStats.present_today : '--'}</span>
+                    <span className="stat-title">Present Today</span>
+                    <span className="stat-trend up"><i className="fa-solid fa-check"></i> Checked In</span>
                   </div>
                 </div>
               </div>
