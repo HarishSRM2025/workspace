@@ -1,18 +1,26 @@
 import { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import './Dashboard.css';
-import ProfileModal from '../Profile/ProfileModal';
 import { ACCENTS, applyAppearance, getStoredAccent, getStoredTheme } from '../../utils/appearance';
 
 export default function Header({ slug, onLogout }) {
+  const navigate = useNavigate();
   const [theme, setTheme] = useState(getStoredTheme());
   const [accent, setAccent] = useState(getStoredAccent());
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [showAccentPanel, setShowAccentPanel] = useState(false);
 
   const userData = JSON.parse(localStorage.getItem('hrms_tenant_user_data') || '{}');
 
   useEffect(() => {
     applyAppearance(theme, accent);
   }, [theme, accent]);
+
+  // Live clock
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const toggleTheme = () => {
     const nextTheme = theme === 'light' ? 'dark' : 'light';
@@ -26,78 +34,99 @@ export default function Header({ slug, onLogout }) {
     return 'U';
   };
 
+  const getUserName = () => {
+    return userData?.data?.user?.user_name || userData?.data?.data?.data?.user?.user_name || 'User';
+  };
+
+  const formatTime = (date) => {
+    return date.toLocaleTimeString('en-US', {
+      hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
+    });
+  };
+
   const userRole = userData?.data?.user?.role || userData?.data?.data?.data?.user?.role || 'EMPLOYEE';
   const UserRole = userRole === 'TENANT_ADMIN' ? 'Admin' : userRole === 'MANAGER' ? 'Manager' : 'Employee';
 
+  const accentObj = ACCENTS.find(a => a.key === accent) || ACCENTS[0];
+
   return (
-    <>
-      <header className="dashboard-header">
-        <div className="header-left">
-          <h1 className="header-title">
-            PeopleOS <span className="header-separator"><i className="fa-solid fa-chevron-right"></i></span> <span className="header-title-bold">{slug} Organization</span>
-          </h1>
+    <header className="ws-header">
+      {/* Left: Search */}
+      <div className="ws-header-left">
+        <div className="ws-search-box">
+          <i className="fa-solid fa-magnifying-glass ws-search-icon" />
+          <input
+            type="text"
+            className="ws-search-input"
+            placeholder="Search projects, forms..."
+          />
+          <kbd className="ws-search-kbd">⌘K</kbd>
         </div>
+      </div>
 
-        <div className="header-right">
-          {/* Theme Mode Toggle Button */}
-          <button 
-            className="icon-btn" 
-            onClick={toggleTheme} 
-            title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+      {/* Center: Clock */}
+      <div className="ws-header-center">
+        <div className="ws-clock">
+          <i className="fa-regular fa-clock" />
+          <span>{formatTime(currentTime)}</span>
+        </div>
+      </div>
+
+      {/* Right: Actions */}
+      <div className="ws-header-right">
+        {/* Notification bell */}
+        <button className="ws-icon-btn" title="Notifications">
+          <i className="fa-regular fa-bell" />
+        </button>
+
+        {/* Theme toggle */}
+        <button className="ws-icon-btn" onClick={toggleTheme} title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}>
+          <i className={theme === 'light' ? 'fa-regular fa-moon' : 'fa-regular fa-sun'} />
+        </button>
+
+        {/* Color palette picker */}
+        <div className="ws-accent-wrapper">
+          <button
+            className="ws-icon-btn ws-accent-trigger"
+            onClick={() => setShowAccentPanel(p => !p)}
+            title="Primary color"
           >
-            <i className={theme === 'light' ? 'fa-regular fa-moon' : 'fa-regular fa-sun'}></i>
+            <span className="ws-accent-dot" style={{ background: accentObj.value }} />
           </button>
-
-          {/* Primary Color Palette Selector */}
-          <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-            {ACCENTS.map((item) => (
-              <button
-                key={item.key}
-                onClick={() => setAccent(item.key)}
-                style={{
-                  width: '18px',
-                  height: '18px',
-                  borderRadius: '50%',
-                  background: item.value,
-                  border: accent === item.key ? '2px solid var(--text-primary)' : 'none',
-                  cursor: 'pointer',
-                  padding: 0
-                }}
-                title={`Theme color: ${item.key}`}
-              />
-            ))}
-          </div>
-
-          <button className="icon-btn" onClick={() => setIsProfileOpen(true)} title="Profile & Password Settings">
-            <i className="fa-regular fa-user"></i>
-          </button>
-
-          <button className="icon-btn" onClick={onLogout} title="Logout">
-            <i className="fa-solid fa-arrow-right-from-bracket"></i>
-          </button>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderLeft: '1px solid var(--border-color)', paddingLeft: '16px', marginLeft: '4px' }}>
-            <span className="badge primary" style={{ textTransform: 'capitalize' }}>
-              {UserRole}
-            </span>
-            <div 
-              className="avatar" 
-              onClick={() => setIsProfileOpen(true)}
-              title="Click to manage account & password"
-              style={{ cursor: 'pointer' }}
-            >
-              {getInitials()}
-            </div>
-          </div>
+          {showAccentPanel && (
+            <>
+              <div className="ws-accent-backdrop" onClick={() => setShowAccentPanel(false)} />
+              <div className="ws-accent-panel">
+                <div className="ws-accent-panel-title">Primary color</div>
+                <div className="ws-accent-grid">
+                  {ACCENTS.map((item) => (
+                    <button
+                      key={item.key}
+                      className={`ws-accent-swatch ${accent === item.key ? 'active' : ''}`}
+                      style={{ background: item.value }}
+                      onClick={() => { setAccent(item.key); setShowAccentPanel(false); }}
+                      title={item.key}
+                    >
+                      {accent === item.key && <i className="fa-solid fa-check" />}
+                      <span>{item.key.charAt(0).toUpperCase() + item.key.slice(1)}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
         </div>
-      </header>
 
-      {isProfileOpen && (
-        <ProfileModal 
-          userData={userData} 
-          onClose={() => setIsProfileOpen(false)} 
-        />
-      )}
-    </>
+        {/* Avatar + user name */}
+        <div
+          className="ws-user-chip"
+          onClick={() => navigate(`/${slug}/home/employee/profile`)}
+          title="My Profile & Settings"
+        >
+          <div className="ws-avatar">{getInitials()}</div>
+          <span className="ws-user-name">{getUserName()}</span>
+        </div>
+      </div>
+    </header>
   );
 }

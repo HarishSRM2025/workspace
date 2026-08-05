@@ -22,6 +22,7 @@ import TaskAssignment from './Pages/Dashboard/Manager/TaskAssignment';
 
 // Employee Features
 import ProfileManagement from './Pages/Dashboard/Employee/ProfileManagement';
+import ProfilePage from './Pages/Dashboard/Employee/ProfilePage';
 import AttendanceMarking from './Pages/Dashboard/Employee/AttendanceMarking';
 import LeaveRequest from './Pages/Dashboard/Employee/LeaveRequest';
 import PayslipAccess from './Pages/Dashboard/Employee/PayslipAccess';
@@ -64,7 +65,8 @@ function App() {
             <Route path="manager/tasks" element={<TaskAssignment />} />
 
             {/* Employee Routes */}
-            <Route path="employee/profile" element={<ProfileManagement />} />
+            <Route path="employee/profile" element={<ProfilePage />} />
+            <Route path="employee/profile/details" element={<ProfileManagement />} />
             <Route path="employee/attendance" element={<AttendanceMarking />} />
             <Route path="employee/leaves" element={<LeaveRequest />} />
             <Route path="employee/payslips" element={<PayslipAccess />} />
