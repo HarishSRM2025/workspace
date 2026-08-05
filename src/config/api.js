@@ -14,6 +14,7 @@ export const API_ENDPOINTS = {
   TENANT_USER_SIGNIN: `${API_BASE_URL}/tenant/user/signin`,
   TENANT_USER_SIGNUP: `${API_BASE_URL}/tenant/user/signup`,
   TENANT_USERS_BY_TENANT: (tenantId) => `${API_BASE_URL}/tenant/user/tenant/${tenantId}`,
+  CHANGE_PASSWORD: `${API_BASE_URL}/tenant/user/change-password`,
 
   // Employee endpoints
   EMPLOYEE_LIST: `${API_BASE_URL}/tenant/employee/list`,

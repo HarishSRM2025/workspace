@@ -291,7 +291,12 @@ export default function AttendanceMarking() {
 
     if (att) {
       if (att.check_out_time) return <span className="badge success">Present (Completed)</span>;
-      if (att.check_in_time) return <span className="badge warning">Present (In Progress)</span>;
+      if (att.check_in_time) {
+        if (att.status?.includes('Half Day') || att.status?.includes('LOP') || (!isToday && !att.check_out_time)) {
+          return <span className="badge warning" style={{ background: '#D97706', color: '#fff' }}><i className="fa-solid fa-triangle-exclamation"></i> 1st Half: Present, 2nd Half: LOP</span>;
+        }
+        return <span className="badge warning">Present (In Progress)</span>;
+      }
     }
 
     if (l) {

@@ -1,7 +1,13 @@
+import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import './Dashboard.css';
+import ProfileModal from '../Profile/ProfileModal';
 
 export default function Sidebar({ role, slug }) {
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const userData = JSON.parse(localStorage.getItem('hrms_tenant_user_data') || '{}');
+  const user = userData?.data?.user || userData?.data?.data?.user || userData?.data?.data?.data?.user || userData?.user || {};
+
   const getLinks = () => {
     switch(role) {
       case 'TENANT_ADMIN':
@@ -52,38 +58,70 @@ export default function Sidebar({ role, slug }) {
   };
 
   const menuSections = getLinks();
+  const userName = user.user_name || user.email || 'User';
+  const initials = userName.slice(0, 2).toUpperCase();
 
   return (
-    <aside className="sidebar">
-      <div className="sidebar-header" style={{ borderBottom: '1px solid var(--border-color)', margin: '0 0 16px 0', padding: '20px 24px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div className="sidebar-logo-icon">
-             <i className="fa-solid fa-cloud" style={{ fontSize: '14px' }}></i>
+    <>
+      <aside className="sidebar">
+        <div className="sidebar-header" style={{ borderBottom: '1px solid var(--border-color)', margin: 0, padding: '20px 24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div className="sidebar-logo-icon">
+               <i className="fa-solid fa-cloud" style={{ fontSize: '14px' }}></i>
+            </div>
+            <h2 className="sidebar-title" style={{ fontSize: '16px', margin: 0 }}>
+              PeopleOS <span style={{ fontSize: '10px', background: 'var(--primary-light)', color: 'var(--primary)', padding: '2px 6px', borderRadius: '4px', verticalAlign: 'middle', marginLeft: '4px' }}>HRMS</span>
+            </h2>
           </div>
-          <h2 className="sidebar-title" style={{ fontSize: '16px' }}>
-            PeopleOS <span style={{ fontSize: '10px', background: '#E0E7FF', color: '#4F46E5', padding: '2px 6px', borderRadius: '4px', verticalAlign: 'middle', marginLeft: '4px' }}>HRMS</span>
-          </h2>
         </div>
-      </div>
-      
-      <nav className="sidebar-menu">
-        {menuSections.map((sectionData) => (
-          <div key={sectionData.section}>
-            <div className="menu-section">{sectionData.section}</div>
-            {sectionData.links.map((link) => (
-              <NavLink
-                key={link.name}
-                to={link.path}
-                end={link.exact}
-                className={({ isActive }) => `menu-item ${isActive ? 'active' : ''}`}
-              >
-                <span className="menu-icon"><i className={link.icon}></i></span>
-                {link.name}
-              </NavLink>
-            ))}
+        
+        <nav className="sidebar-menu">
+          {menuSections.map((sectionData) => (
+            <div key={sectionData.section}>
+              <div className="menu-section">{sectionData.section}</div>
+              {sectionData.links.map((link) => (
+                <NavLink
+                  key={link.name}
+                  to={link.path}
+                  end={link.exact}
+                  className={({ isActive }) => `menu-item ${isActive ? 'active' : ''}`}
+                >
+                  <span className="menu-icon"><i className={link.icon}></i></span>
+                  {link.name}
+                </NavLink>
+              ))}
+            </div>
+          ))}
+        </nav>
+
+        <div className="sidebar-footer" style={{ padding: '16px', borderTop: '1px solid var(--border-color)' }}>
+          <div 
+            style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', padding: '8px', borderRadius: '8px', transition: 'all 0.2s' }}
+            onClick={() => setIsProfileOpen(true)}
+            title="Open Account & Password Settings"
+          >
+            <div className="sidebar-avatar" style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '14px' }}>
+              {initials}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 600, fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--text-primary)' }}>
+                {userName}
+              </div>
+              <div style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>
+                View Profile & Settings
+              </div>
+            </div>
+            <i className="fa-solid fa-gear" style={{ color: 'var(--text-tertiary)' }}></i>
           </div>
-        ))}
-      </nav>
-    </aside>
+        </div>
+      </aside>
+
+      {isProfileOpen && (
+        <ProfileModal 
+          userData={userData}
+          onClose={() => setIsProfileOpen(false)}
+        />
+      )}
+    </>
   );
 }

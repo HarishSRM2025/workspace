@@ -27,7 +27,14 @@ import LeaveRequest from './Pages/Dashboard/Employee/LeaveRequest';
 import PayslipAccess from './Pages/Dashboard/Employee/PayslipAccess';
 import TaskAssignments from './Pages/Dashboard/Employee/TaskAssignments';
 
+import { useEffect } from 'react';
+import { applyAppearance } from './utils/appearance';
+
 function App() {
+  useEffect(() => {
+    applyAppearance();
+  }, []);
+
   return (
     <Router>
       <Routes>
