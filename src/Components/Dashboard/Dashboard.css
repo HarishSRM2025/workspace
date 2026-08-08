@@ -620,6 +620,11 @@ body {
   border: 1px solid var(--border-color);
   font-size: 13px;
   color: var(--text-primary);
+  background-color: var(--bg-color);
+  outline: none;
+}
+.search-input-wrapper input::placeholder {
+  color: var(--text-tertiary);
 }
 
 /* Modal Styles */
