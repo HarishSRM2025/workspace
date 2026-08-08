@@ -117,6 +117,20 @@ export default function Sidebar({ role, slug }) {
           </div>
           <i className="fa-solid fa-chevron-right" style={{ color: 'var(--text-tertiary)', fontSize: '11px' }}></i>
         </div>
+
+        <button
+          type="button"
+          className="sidebar-logout"
+          onClick={() => {
+            localStorage.removeItem('hrms_tenant_user_data');
+            localStorage.removeItem('hrms_theme');
+            localStorage.removeItem('hrms_primary_color');
+            window.location.replace('/signin');
+          }}
+        >
+          <i className="fa-solid fa-right-from-bracket" />
+          Sign out
+        </button>
       </div>
     </aside>
   );
